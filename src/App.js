@@ -5,9 +5,24 @@ import * as LotteryTokenContractJSON from '../src/assets/HoleyBookCounter.json'
 const CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
 
 function App() {
-  console.log('-------------------------')
-
   const [countCyclic, setCountCyclic] = useState(0)
+  const [cyclesCompleted, setCyclesCompleted] = useState(0)
+  // const [txnCosts, setTxnCosts] = useState([])
+  // const [prevTxnID, setPrevTxnID] = useState(null)
+  const [prevTxnCost, setPrevTxnCost] = useState(null)
+
+  const divClosure = () => {
+
+    let memory = []
+
+    return (prevTxnID, prevTxnCost) => {
+      memory = [...memory, { prevTxnID, prevTxnCost }]
+
+      return memory
+    }
+  }
+
+  let gasTracker = divClosure()
 
   // provider
   const localHardhatProvider = ethers.getDefaultProvider('http://localhost:8545')
@@ -18,12 +33,20 @@ function App() {
   targetContract.connect(localHardhatProvider)
 
   const updatedAppCounterState = async () => {
-    const countCyclicOnLoad = await targetContract.countCyclic()
-    setCountCyclic(countCyclicOnLoad)
+    const latestCountCyclic = await targetContract.countCyclic()
+    setCountCyclic(latestCountCyclic)
   }
 
-  const contractConnect = async () => {
+  const updatedAppCyclesCounterState = async () => {
+    const latestCountCyclesCompletedCyclic = await targetContract.cyclesCompleted()
+    setCyclesCompleted(latestCountCyclesCompletedCyclic)
+  }
+  // const updateTxnCosts = async (countCyclic, txnGasCost) => {
+  //   console.log(countCyclic, txnGasCost)
+  //   setTxnCosts(...txnCosts, [countCyclic, txnGasCost])
+  // }
 
+  const contractConnect = async () => {
     // create a wallet instance from a mnemonic...
     // const mnemonic = "announce room limb pattern dry unit scale effort smooth jazz weasel alcohol"
     // const walletMnemonic = Wallet.fromMnemonic(mnemonic)
@@ -33,25 +56,27 @@ function App() {
     // const wallet = walletMnemonic.connect(localHardhatProvider)
 
     const wallet = new Wallet("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
-
     const signer = wallet.connect(localHardhatProvider)
-    const balanceBN = await signer.getBalance()
-    console.log(balanceBN)
 
     updatedAppCounterState()
+    updatedAppCyclesCounterState()
 
     return signer
-
   }
 
   useEffect(() => {
     contractConnect()
+
     // targetContract.
 
     // return () => {
     //   second
     // }
   }, [])
+
+  useEffect(() => {
+    gasTracker()
+  }, [prevTxnCost])
 
   const handleClick = async () => {
     console.log('button clicked!')
@@ -63,7 +88,8 @@ function App() {
 
     const txnGasCostBN = incrementCounterTxnReceipt.gasUsed
     const txnGasCost = Number(ethers.utils.formatEther(txnGasCostBN))
-    console.log(countCyclic, txnGasCost)
+    console.log(txnGasCost)
+    setPrevTxnCost(txnGasCost)
 
     if (incrementCounterTxnReceipt.confirmations > 0) await updatedAppCounterState()
 
@@ -71,7 +97,6 @@ function App() {
 
   // const portrait = () => window.matchMedia("(max-width: 375px)").matches
   const landscape = () => window.matchMedia("(min-width: 376px)").matches
-  console.log('isLandscape?: ', landscape())
 
   const appWrapper = {
     display: 'flex',
@@ -94,8 +119,9 @@ function App() {
   }
 
   const appContainerLandscape = {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
+    // display: "grid",
+    display: "flex",
+    flexDirection: "column",
     columnGap: "21px",
     padding: "0 120px"
   }
@@ -106,15 +132,29 @@ function App() {
     gap: "21px"
   }
 
+
+
   return (
     <div style={appWrapper}>
       <div style={landscape() ? appContainerLandscape : appContainerPortrait} >
         <div>
-          <input disabled={true} style={inputStyle} value={countCyclic} />
-          <button style={buttonStyle} onClick={handleClick}></button>
+          <div>
+            <input disabled={true} style={inputStyle} value={countCyclic} />
+            <input disabled={true} style={inputStyle} value={cyclesCompleted} />
+          </div>
+          <button style={buttonStyle} onClick={handleClick}>
+            <span className='text-white fs-2 py-1' >&#9735;</span>
+          </button>
         </div>
-        <div>
-          Hello World
+        <div className='fs-5 text-left mt-5'>
+
+          {
+            gasTracker(countCyclic, prevTxnCost).map((txn) => <div key={countCyclic}>
+              <span>Last Gas Cost ID: {txn.prevTxnID}</span>
+              <br />
+              <span>Last Gas Cost: {txn.prevTxnCost}</span>
+            </div>)
+          }
         </div>
       </div>
     </div>
