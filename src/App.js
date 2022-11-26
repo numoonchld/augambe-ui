@@ -4,6 +4,20 @@ import * as LotteryTokenContractJSON from '../src/assets/HoleyBookCounter.json'
 
 const CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
 
+const counterSeed = () => {
+  let count = 0
+  return () => count++
+}
+const counter = counterSeed()
+
+
+const GasCostEntry = ({ countCyclic, txnGasCost }) => {
+  return <div key={counter()}>
+    <span>&#128293;&nbsp; <b>{countCyclic}/</b> Last Gas Cost: {txnGasCost}</span>
+    <hr />
+  </div>
+}
+
 function App() {
   const [countCyclic, setCountCyclic] = useState(0)
   const [cyclesCompleted, setCyclesCompleted] = useState(0)
@@ -12,11 +26,7 @@ function App() {
   // const [prevTxnCost, setPrevTxnCost] = useState(null)
 
 
-  const counterSeed = () => {
-    let count = 0
-    return () => count++
-  }
-  const counter = counterSeed()
+
 
 
   // const divClosure = () => {
@@ -110,10 +120,11 @@ function App() {
   const landscape = () => window.matchMedia("(min-width: 376px)").matches
 
   const appWrapper = {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: '98vh'
+    // display: 'flex',
+    // justifyContent: 'center',
+    // alignItems: 'center',
+    height: '98vh',
+    padding: "120px 120px"
   }
 
   const inputStyle = {
@@ -130,11 +141,9 @@ function App() {
   }
 
   const appContainerLandscape = {
-    // display: "grid",
     display: "flex",
     flexDirection: "column",
     columnGap: "21px",
-    padding: "0 120px"
   }
 
   const appContainerPortrait = {
@@ -147,25 +156,19 @@ function App() {
     <div style={appWrapper}>
       <div style={landscape() ? appContainerLandscape : appContainerPortrait} >
         <div>
-          <div>
-            <input disabled={true} style={inputStyle} value={countCyclic} />
-            <input disabled={true} style={inputStyle} value={cyclesCompleted} />
-          </div>
-          <button style={buttonStyle} onClick={handleClick}>
-            <span className='text-white fs-2 py-1' >&#9735;</span>
-          </button>
+          <input disabled={true} style={inputStyle} value={countCyclic} />
+          <input disabled={true} style={inputStyle} value={cyclesCompleted} />
         </div>
-        <div className='fs-5 text-left mt-5'>
-
-          {
-            txnCosts.map((txn) => <div key={counter()}>
-              <span>Last Gas Cost ID: {txn.countCyclic}</span>
-              <br />
-              <span>Last Gas Cost: {txn.txnGasCost}</span>
-            </div>)
-          }
-        </div>
+        <button style={buttonStyle} onClick={handleClick}>
+          <span className='text-white fs-2 py-1' ><b>&#9735;</b></span>
+        </button>
       </div>
+      <div className='fs-5 text-left mt-5'>
+        {
+          txnCosts.map((txn) => <GasCostEntry countCyclic={txn.countCyclic} txnGasCost={txn.txnGasCost} />)
+        }
+      </div>
+
     </div>
   );
 }
