@@ -7,22 +7,30 @@ const CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
 function App() {
   const [countCyclic, setCountCyclic] = useState(0)
   const [cyclesCompleted, setCyclesCompleted] = useState(0)
-  // const [txnCosts, setTxnCosts] = useState([])
+  const [txnCosts, setTxnCosts] = useState([])
   // const [prevTxnID, setPrevTxnID] = useState(null)
-  const [prevTxnCost, setPrevTxnCost] = useState(null)
+  // const [prevTxnCost, setPrevTxnCost] = useState(null)
 
-  const divClosure = () => {
 
-    let memory = []
-
-    return (prevTxnID, prevTxnCost) => {
-      memory = [...memory, { prevTxnID, prevTxnCost }]
-
-      return memory
-    }
+  const counterSeed = () => {
+    let count = 0
+    return () => count++
   }
+  const counter = counterSeed()
 
-  let gasTracker = divClosure()
+
+  // const divClosure = () => {
+
+  //   let memory = []
+
+  //   return (prevTxnID, prevTxnCost) => {
+  //     memory = [...memory, { prevTxnID, prevTxnCost }]
+
+  //     return memory
+  //   }
+  // }
+
+  // let gasTracker = divClosure()
 
   // provider
   const localHardhatProvider = ethers.getDefaultProvider('http://localhost:8545')
@@ -61,6 +69,8 @@ function App() {
     updatedAppCounterState()
     updatedAppCyclesCounterState()
 
+
+
     return signer
   }
 
@@ -74,9 +84,9 @@ function App() {
     // }
   }, [])
 
-  useEffect(() => {
-    gasTracker()
-  }, [prevTxnCost])
+  // useEffect(() => {
+  //   gasTracker()
+  // }, [prevTxnCost])
 
   const handleClick = async () => {
     console.log('button clicked!')
@@ -88,11 +98,12 @@ function App() {
 
     const txnGasCostBN = incrementCounterTxnReceipt.gasUsed
     const txnGasCost = Number(ethers.utils.formatEther(txnGasCostBN))
-    console.log(txnGasCost)
-    setPrevTxnCost(txnGasCost)
+    console.log(countCyclic, txnGasCost)
+    console.log(txnCosts)
+
+    setTxnCosts([{ countCyclic, txnGasCost }, ...txnCosts])
 
     if (incrementCounterTxnReceipt.confirmations > 0) await updatedAppCounterState()
-
   }
 
   // const portrait = () => window.matchMedia("(max-width: 375px)").matches
@@ -132,8 +143,6 @@ function App() {
     gap: "21px"
   }
 
-
-
   return (
     <div style={appWrapper}>
       <div style={landscape() ? appContainerLandscape : appContainerPortrait} >
@@ -149,10 +158,10 @@ function App() {
         <div className='fs-5 text-left mt-5'>
 
           {
-            gasTracker(countCyclic, prevTxnCost).map((txn) => <div key={countCyclic}>
-              <span>Last Gas Cost ID: {txn.prevTxnID}</span>
+            txnCosts.map((txn) => <div key={counter()}>
+              <span>Last Gas Cost ID: {txn.countCyclic}</span>
               <br />
-              <span>Last Gas Cost: {txn.prevTxnCost}</span>
+              <span>Last Gas Cost: {txn.txnGasCost}</span>
             </div>)
           }
         </div>
